@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import re
 from difflib import SequenceMatcher
 
-CATEGORY_KEYWORDS = ['유아동', '어패럴', '키즈', '패션']
+CATEGORY_KEYWORDS = ['유아동', '어패럴', '키즈', '패션', '아동', '유아', '베이비', '브랜드']
 
 # 브랜드별 기본 제외 키워드 사전 (운영하며 추가 가능)
 BRAND_EXCLUDE_MAP = {
