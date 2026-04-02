@@ -508,6 +508,58 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+
+    /* ── EXCLUDE TAG INPUT ── */
+    .exclude-tag-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 36px;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      cursor: text;
+      margin-bottom: 8px;
+    }
+    .exclude-tag-wrap:focus-within { border-color: var(--danger); }
+
+    .exclude-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fde8e8;
+      border: 1px solid #f5c0c0;
+      color: #b03030;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .exclude-tag button {
+      background: none;
+      border: none;
+      color: #b03030;
+      cursor: pointer;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .exclude-tag button:hover { opacity: 1; }
+
+    .exclude-input {
+      border: none;
+      background: none;
+      outline: none;
+      font-size: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--text-primary);
+      min-width: 80px;
+      flex: 1;
+    }
+    .exclude-input::placeholder { color: var(--text-muted); }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
       .layout { grid-template-columns: 1fr; }
@@ -569,19 +621,6 @@
       <div class="chip-wrap" id="keyword-chips">
         <span class="chip" data-kw="아바마">아바마</span>
         <span class="chip" data-kw="코니바이에린">코니바이에린</span>
-        <span class="chip" data-kw="베베드피노">베베드피노</span>
-        <span class="chip" data-kw="밍크뮤">밍크뮤</span>
-        <span class="chip" data-kw="블루독">블루독</span>
-        <span class="chip" data-kw="베베쥬">베베쥬</span>
-        <span class="chip" data-kw="데일리베베">데일리베베</span>
-        <span class="chip" data-kw="베베르망">베베르망</span>
-        <span class="chip" data-kw="미니도우">미니도우</span>
-        <span class="chip" data-kw="래핑차일드">래핑차일드</span>
-        <span class="chip" data-kw="리틀그라운드">리틀그라운드</span>
-        <span class="chip" data-kw="보보쇼즈">보보쇼즈</span>
-        <span class="chip" data-kw="타오">타오</span>
-        <span class="chip" data-kw="봉통">봉통</span>
-        <span class="chip" data-kw="윙켄">윙켄</span>
       </div>
       <div class="chip-actions">
         <button class="chip-action-btn" id="select-all-btn">전체 선택</button>
@@ -605,6 +644,24 @@
           <strong>OR</strong>: 브랜드별 + 직접 입력 각각 검색<br>
           <strong>AND</strong>: 브랜드명 AND 직접 입력 조합 검색
         </div>
+      </div>
+    </div>
+
+
+    <!-- 제외 키워드 -->
+    <div class="sidebar-section">
+      <div class="section-label">제외 키워드</div>
+      <div class="exclude-tag-wrap" id="exclude-tag-wrap" onclick="document.getElementById('exclude-input').focus()">
+        <input
+          type="text"
+          id="exclude-input"
+          class="exclude-input"
+          placeholder="입력 후 Enter (예: 도우정보)"
+        />
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); line-height:1.6;">
+        입력한 단어가 포함된 기사는 결과에서 제외됩니다.<br>
+        여러 개 입력 가능 (각각 Enter로 추가)
       </div>
     </div>
 
@@ -715,6 +772,45 @@
     };
   }
 
+
+  // ── EXCLUDE KEYWORDS TAG INPUT ──
+  let excludeKeywords = [];
+
+  const excludeInput = document.getElementById('exclude-input');
+  const excludeWrap  = document.getElementById('exclude-tag-wrap');
+
+  excludeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = excludeInput.value.trim().replace(/,/g, '');
+      if (val && !excludeKeywords.includes(val)) {
+        excludeKeywords.push(val);
+        renderExcludeTags();
+      }
+      excludeInput.value = '';
+    }
+    if (e.key === 'Backspace' && excludeInput.value === '' && excludeKeywords.length) {
+      excludeKeywords.pop();
+      renderExcludeTags();
+    }
+  });
+
+  function renderExcludeTags() {
+    // Remove old tags (keep the input)
+    excludeWrap.querySelectorAll('.exclude-tag').forEach(t => t.remove());
+    excludeKeywords.forEach((kw, i) => {
+      const tag = document.createElement('span');
+      tag.className = 'exclude-tag';
+      tag.innerHTML = `${kw}<button onclick="removeExclude(${i})" title="제거">×</button>`;
+      excludeWrap.insertBefore(tag, excludeInput);
+    });
+  }
+
+  function removeExclude(i) {
+    excludeKeywords.splice(i, 1);
+    renderExcludeTags();
+  }
+
   // ── SEARCH ──
   async function runSearch() {
     const selected = [...document.querySelectorAll('.chip.selected')].map(c => c.dataset.kw);
@@ -746,6 +842,7 @@
           display,
           start_date,
           end_date,
+          exclude_keywords: excludeKeywords,
         }),
       });
 
